@@ -111,9 +111,8 @@ function getTransactionsFromThisMessage(messageSections, receivedTime, bank) {
         ];
         valuesFromAllMessageTransactions.push(valuesfromTransaction);
         if ([TRANSACTION_NAMES.PENDING_EXPENSE, TRANSACTION_NAMES.PENDING_DEPOSIT].includes(transType)) {
-          let valuesForComp = valuesfromTransaction.slice(1);
-          valuesForComp[3] = valuesForComp[3].replace(/,/g, '');
-          newCompletedMessageTransactions.push(valuesForComp);
+          let valuesMinusReceivedTime = valuesfromTransaction.slice(1);
+          newCompletedMessageTransactions.push(valuesMinusReceivedTime);
         }
       } else if (bank.NON_TRANS_TYPE.test(thisSection)) {
         Logger.log('Non transaction email alert');
@@ -142,6 +141,13 @@ function getTransactionType(section, bank) {
   return null;
 }
 
+function transactionIsPending(transactionType) {
+  if ([TRANSACTION_NAMES.PENDING_EXPENSE, TRANSACTION_NAMES.PENDING_DEPOSIT].includes(transactionType)) {
+    return true;
+  }
+  return false;
+}
+
 function writeToTransactionsSheet(transactionValues, sheet) {
   sheet.insertRowBefore(2);
   sheet.getRange("A2:F2").setValues([transactionValues]);
@@ -161,17 +167,14 @@ function reviewPendingTransactionsFromSheet(newCompletedTransactions) {
   if (anyPendingTransactionWasResolved === false) {Logger.log('No pending transactions were completed');}
 }
 
-// need to get bank into this for the regex
-// need to run this for each bank where the regex is
-// might want to look into a way of limiting the number of banks it has to go through
 function getCurrentPendingTransactionsFromSheet(allRowsFromTransactionSheet) {
   let currentPendingTransactions = [];
   allRowsFromTransactionSheet.forEach((thisTransactionFromSheet, index) => {
-    if (GLOBAL_CONST.REGEX.PENDING.test(thisTransactionFromSheet)) {
+    let transType = thisTransactionFromSheet[3];
+    if (transactionIsPending(transType)) {
       let rowNumber = (index + 1);
       let bankName = thisTransactionFromSheet[1];
       let accountNum = thisTransactionFromSheet[2].toString();
-      let transType = thisTransactionFromSheet[3];
       let dollarAmount = thisTransactionFromSheet[4].toFixed(2);
       let transDescription = thisTransactionFromSheet[5];
       currentPendingTransactions.push([
@@ -186,15 +189,16 @@ function getCurrentPendingTransactionsFromSheet(allRowsFromTransactionSheet) {
 function resolveAnyCompletedPendingTransactions(newCompletedTransactions, currentPendingTransactions) {
   let anyPendingTransactionWasResolved = false;
   newCompletedTransactions.forEach(thisNewCompletedTransaction => {
+    thisNewCompletedTransaction[3] = thisNewCompletedTransaction[3].replace(/,/g, '');
     for (let i = 0; i < currentPendingTransactions.length; i++) {
-      let thisPendingTransaction = currentPendingTransactions[i];
-      let pendingTransactionForComp = [...thisPendingTransaction[1]];
-      pendingTransactionForComp[1] = pendingTransactionForComp[1].replace('Pending ', '');
-      if (JSON.stringify(pendingTransactionForComp) === JSON.stringify(thisNewCompletedTransaction)) {
+      let thisCurrentPendingTransaction = currentPendingTransactions[i];
+      let currentPendingTransactionForComp = [...thisCurrentPendingTransaction[1]];
+      currentPendingTransactionForComp[1] = currentPendingTransactionForComp[1].replace('Pending ', '');
+      if (JSON.stringify(currentPendingTransactionForComp) === JSON.stringify(thisNewCompletedTransaction)) {
         Logger.log('Found completed pending transaction:');
-        Logger.log(thisPendingTransaction[1]);
+        Logger.log(thisCurrentPendingTransaction[1]);
         Logger.log(thisNewCompletedTransaction);
-        GLOBAL_CONST.TRANSACTIONS_SHEET.deleteRow(thisPendingTransaction[0]);
+        GLOBAL_CONST.TRANSACTIONS_SHEET.deleteRow(thisCurrentPendingTransaction[0]);
         currentPendingTransactions.splice(i, 1);
         i--;
         anyPendingTransactionWasResolved = true;

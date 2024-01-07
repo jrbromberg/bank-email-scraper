@@ -36,11 +36,11 @@ function setTestData() {
         DESCRIPTION_REGEX: /\(Description\)/g,
         SHEET_START_VALUES: {
             ROWS: [
-                [starterEntryDatetime, '1234', 'Deposit', '10,000.00', 'Starter entry'],
-                [starterEntryDatetime, '1234', 'Pending Expense', '-500.00', 'Test pending exp.'],
-                [starterEntryDatetime, '1234', 'Pending Expense', '-1,000.00', 'Test pending exp.'],
-                [starterEntryDatetime, '1234', 'Pending Expense', '-1,500.00', 'Test pending exp.'],
-                [starterEntryDatetime, '1234', 'Pending Expense', '-2,000.00', 'Test pending exp.']
+                [starterEntryDatetime, 'BECU', '1234', 'Deposit', '10,000.00', 'Starter entry'],
+                [starterEntryDatetime, 'BECU', '1234', 'Pending Expense', '-500.00', 'Test pending exp.'],
+                [starterEntryDatetime, 'BECU', '1234', 'Pending Expense', '-1,000.00', 'Test pending exp.'],
+                [starterEntryDatetime, 'BECU', '1234', 'Pending Expense', '-1,500.00', 'Test pending exp.'],
+                [starterEntryDatetime, 'BECU', '1234', 'Pending Expense', '-2,000.00', 'Test pending exp.']
             ],
             PENDING_DESCRIPTION: "(Test pending exp.)"
         }

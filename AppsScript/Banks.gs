@@ -8,25 +8,9 @@ function setBankData() {
         BALANCE: 'Balance'
     }
     Object.freeze(TRANSACTION_NAMES);
-
     BANKS = {}
-    BANKS.TEST = {
-        LONG_NAME: 'Test',
-        SHORT_NAME: 'Test',
-        SENDER: 'test',
-        ACCOUNT_NUM: /\d{4}(?=\s\*)/,
-        TRANS_TYPE: {
-            EXPENSE: /Large Expense/,
-            DEPOSIT: /Large Deposit/,
-            PENDING_EXPENSE: /Large Pending Expense/
-        },
-        NON_TRANS_TYPE: /(Low Account Balance)/,
-        AMOUNT: /(?!\$0\.00)\$[\d,]*\.\d\d/,
-        DESCRIPTION: /(?<=\().*(?=\))/,
-        OTHER_CONTENT: /12770 Gateway Drive/
-    }
-    BANKS.TEST.SECTION_DELIMITER = new RegExp(`(?<=${BANKS.TEST.AMOUNT.source})`, "g");
 
+    // BANK OF AMERICA
     BANKS.BOFA = {
         LONG_NAME: 'Bank of America',
         SHORT_NAME: 'BofA',
@@ -40,8 +24,9 @@ function setBankData() {
         DESCRIPTION: /(?<=Where:)\s*.*\s(?=View\sdetails)/,
         OTHER_CONTENT: /12770 Gateway Drive/
     }
-    BANKS.BECU.SECTION_DELIMITER = getSectionDelimiter(BANKS.BOFA.DESCRIPTION);
+    BANKS.BOFA.SECTION_DELIMITER = getSectionDelimiter(BANKS.BOFA.DESCRIPTION);
 
+    // BECU
     BANKS.BECU = {
         LONG_NAME: 'BECU',
         SHORT_NAME: 'BECU',
@@ -58,7 +43,24 @@ function setBankData() {
         OTHER_CONTENT: /12770 Gateway Drive/
     }
     BANKS.BECU.SECTION_DELIMITER = getSectionDelimiter(BANKS.BECU.AMOUNT);
-    
+
+    // TEST BANK (Copied from BECU)
+    BANKS.TEST = {
+        LONG_NAME: 'Test',
+        SHORT_NAME: 'Test',
+        SENDER: 'test',
+        ACCOUNT_NUM: /\d{4}(?=\s\*)/,
+        TRANS_TYPE: {
+            EXPENSE: /Large Expense/,
+            DEPOSIT: /Large Deposit/,
+            PENDING_EXPENSE: /Large Pending Expense/
+        },
+        NON_TRANS_TYPE: /(Low Account Balance)/,
+        AMOUNT: /(?!\$0\.00)\$[\d,]*\.\d\d/,
+        DESCRIPTION: /(?<=\().*(?=\))/,
+        OTHER_CONTENT: /12770 Gateway Drive/
+    }
+    BANKS.TEST.SECTION_DELIMITER = getSectionDelimiter(BANKS.TEST.AMOUNT);
     Object.freeze(BANKS);
 }
 

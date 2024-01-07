@@ -18,7 +18,8 @@ function resetTestSheet() {
 }
 
 function prepMessagesFromTestData() {
-    let preppedMessages = [
+    let preppedMessages = [];
+    let testMessagesContentStrings = [
         getTestMessageContentForSingleExpenseAllTestAmounts(),
         getTestMessageContentForAllTransactionTypes(),
         getTestMessageContentForResolvePendingFromPreExisting(),
@@ -28,9 +29,14 @@ function prepMessagesFromTestData() {
         getTestMessageContentForUnknownEndContent()
     ];
     const receivedTime = new Date();
-    preppedMessages.forEach((thisMessage, index) => {
-        receivedTimeAndContent = [receivedTime, thisMessage];
-        preppedMessages[index] = receivedTimeAndContent;
+    const fromEmail = 'noreply@becualerts.org';
+    testMessagesContentStrings.forEach((thisContentString) => {
+        let thisMessagePrepped = {
+            from: fromEmail,
+            time: receivedTime,
+            content: thisContentString
+          }
+        preppedMessages.push(thisMessagePrepped);
     });
     return preppedMessages;
 }
