@@ -1,10 +1,10 @@
 function setConfig() {
     CONFIG = {
-        "PRODUCTION": {
+        PRODUCTION: {
             "SPREADSHEET_ID": "PUT GOOGLE SPREADSHEET ID HERE",
             "ERROR_ALERT_EMAIL_ADDRESS": "PUT EMAIL FOR ERROR ALERTS HERE"
         },
-        "TEST": {
+        TEST: {
             "SPREADSHEET_ID": "PUT TEST GOOGLE SPREADSHEET ID HERE",
             "ERROR_ALERT_EMAIL_ADDRESS": "PUT EMAIL FOR TEST ERROR ALERTS HERE"
         }
@@ -12,9 +12,9 @@ function setConfig() {
     Object.freeze(CONFIG);
 }
 
-// enter your spreadsheet and email address info into the above CONFIG object
-// if using with BECU, no other changes are needed
-// setup your email, spreadsheet, and bank account alerts per the readme
+// enter info the above CONFIG
+// preconfigured banks are in the Banks.gs file
+// setup your emails, spreadsheets, and bank alerts per the readme
 
 setConfig();
 initGlobalVarAndErrorHandling();
@@ -87,16 +87,7 @@ function setDefaultGlobalValues() {
     GLOBAL_CONST.POST_PROCESS_LABEL = GmailApp.getUserLabelByName('TransactionAdded');
     GLOBAL_CONST.PRE_PROCESS_LABEL = GmailApp.getUserLabelByName('BankTransactionUpdate');
     GLOBAL_CONST.UNPROCESSED_ALERTS = GLOBAL_CONST.PRE_PROCESS_LABEL.getThreads();
-    GLOBAL_CONST.REGEX = {
-        ACCOUNT_NUM: /\d{4} \*/,
-        TRANS_TYPE: /(Large Pending Expense|Large Pending Deposit|Large Expense|Large Deposit)/,
-        NON_TRANS_TYPE: /(Low Account Balance)/,
-        PENDING: /Pending/,
-        AMOUNT: /(?!\$0\.00)\$[\d,]*\.\d\d/,
-        EXPENSE: /Expense/,
-        DESCRIPTION: /\(.*\)/,
-        OTHER_CONTENT: /12770 Gateway Drive/
-    }
+    setBankData();
 }
 
 function setProductionGlobalValues() {
