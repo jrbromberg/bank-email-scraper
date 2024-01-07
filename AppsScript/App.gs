@@ -68,7 +68,7 @@ function getTransactionsFromAllMessages(preppedMessages) {
     let messageContent = thisMessage.content;
     Logger.log('Message:');
     Logger.log(messageContent);
-    let messageSections = messageContent.split(new RegExp(`(?<=${bank.AMOUNT.source})`, "g"));
+    let messageSections = messageContent.split(bank.SECTION_DELIMITER);
     let messageTransactionValues = getTransactionsFromThisMessage(messageSections, receivedTime, bank);
     allTransactionValues.allNew.push(...messageTransactionValues.allNew);
     allTransactionValues.newCompleted.push(...messageTransactionValues.newCompleted);
@@ -79,6 +79,7 @@ function getTransactionsFromAllMessages(preppedMessages) {
   return allTransactionValues;
 }
 
+// need to add error handling for when bank isn't found
 function getBankData(message) {
   for (const [bank, bankValues] of Object.entries(BANKS)) {
     if (bankValues.SENDER === message.from) {return bankValues;}
@@ -86,28 +87,32 @@ function getBankData(message) {
   return undefined;
 }
 
-// left off here
-// bank is the bank object
-// replace regex code
-// add bank name to values (put in right spot for how i want the spreadsheet to go)
-// adjust spreadsheet write to write all the values (add one more)
-// adjust spreadsheet (add in the bank column in the right spot)
+// pending and expense will need to be more complicated now  (tran type too)
 function getTransactionsFromThisMessage(messageSections, receivedTime, bank) {
   let valuesFromAllMessageTransactions = [];
   let newCompletedMessageTransactions = [];
   messageSections.forEach(thisSection => {
     try {
-      if (bank.TRANS_TYPE.test(thisSection)) {
-        let accountNum = thisSection.match(bank.ACCOUNT_NUM)[0].slice(0, 4);
-        let transType = thisSection.match(bank.TRANS_TYPE)[0].replace('Large ', '');
+      let transType = getTransactionType(thisSection, bank);
+      if (transType != null) {
+        let accountNum = thisSection.match(bank.ACCOUNT_NUM)[0];
         let dollarAmount = thisSection.match(bank.AMOUNT)[0].replace('$', '');
-        if (bank.EXPENSE.test(transType)) {dollarAmount = ('-' + dollarAmount);}
-        let transDescription = thisSection.match(bank.DESCRIPTION)[0].slice(1).slice(0, -1);
-        let valuesfromTransaction = [receivedTime, accountNum, transType, dollarAmount, transDescription];
+        if ([TRANSACTION_NAMES.EXPENSE, TRANSACTION_NAMES.PENDING_EXPENSE].includes(transType)) {
+          dollarAmount = ('-' + dollarAmount);
+        }
+        let transDescription = thisSection.match(bank.DESCRIPTION)[0].trim();
+        let valuesfromTransaction = [
+          receivedTime,
+          bank.SHORT_NAME,
+          accountNum,
+          transType,
+          dollarAmount,
+          transDescription
+        ];
         valuesFromAllMessageTransactions.push(valuesfromTransaction);
-        if (bank.PENDING.test(transType) === false) {
+        if ([TRANSACTION_NAMES.PENDING_EXPENSE, TRANSACTION_NAMES.PENDING_DEPOSIT].includes(transType)) {
           let valuesForComp = valuesfromTransaction.slice(1);
-          valuesForComp[2] = valuesForComp[2].replace(/,/g, '');
+          valuesForComp[3] = valuesForComp[3].replace(/,/g, '');
           newCompletedMessageTransactions.push(valuesForComp);
         }
       } else if (bank.NON_TRANS_TYPE.test(thisSection)) {
@@ -126,9 +131,20 @@ function getTransactionsFromThisMessage(messageSections, receivedTime, bank) {
   return messageTransactionValues;
 }
 
+// got a lot of this from chatgpt, make sure it works
+function getTransactionType(section, bank) {
+  const matchingTransType = Object.entries(bank.TRANS_TYPE).find(([typeKey, regex]) => regex.test(section));
+  if (matchingTransType) {
+    const [typeKey, regex] = matchingTransType;
+    const matchingName = Object.entries(TRANSACTION_NAMES).find(([nameKey]) => nameKey === typeKey);
+    return matchingName ? matchingName[1] : null;
+  }
+  return null;
+}
+
 function writeToTransactionsSheet(transactionValues, sheet) {
   sheet.insertRowBefore(2);
-  sheet.getRange(2, 1, 1, 5).setValues([transactionValues]);
+  sheet.getRange("A2:F2").setValues([transactionValues]);
 }
 
 function reviewPendingTransactionsFromSheet(newCompletedTransactions) {
@@ -145,17 +161,23 @@ function reviewPendingTransactionsFromSheet(newCompletedTransactions) {
   if (anyPendingTransactionWasResolved === false) {Logger.log('No pending transactions were completed');}
 }
 
-// need to get bank in here
+// need to get bank into this for the regex
+// need to run this for each bank where the regex is
+// might want to look into a way of limiting the number of banks it has to go through
 function getCurrentPendingTransactionsFromSheet(allRowsFromTransactionSheet) {
   let currentPendingTransactions = [];
   allRowsFromTransactionSheet.forEach((thisTransactionFromSheet, index) => {
     if (GLOBAL_CONST.REGEX.PENDING.test(thisTransactionFromSheet)) {
       let rowNumber = (index + 1);
-      let accountNum = thisTransactionFromSheet[1].toString();
-      let transType = thisTransactionFromSheet[2];
-      let dollarAmount = thisTransactionFromSheet[3].toFixed(2);
-      let transDescription = thisTransactionFromSheet[4];
-      currentPendingTransactions.push([rowNumber, [accountNum, transType, dollarAmount, transDescription]]);
+      let bankName = thisTransactionFromSheet[1];
+      let accountNum = thisTransactionFromSheet[2].toString();
+      let transType = thisTransactionFromSheet[3];
+      let dollarAmount = thisTransactionFromSheet[4].toFixed(2);
+      let transDescription = thisTransactionFromSheet[5];
+      currentPendingTransactions.push([
+        rowNumber,
+        [bankName, accountNum, transType, dollarAmount, transDescription]
+      ]);
     }
   });
   return currentPendingTransactions;
