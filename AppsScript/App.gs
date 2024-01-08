@@ -34,7 +34,7 @@ function prepMessagesFromEmail() {
     GLOBAL_CONST.UNPROCESSED_ALERTS
   );
   allMessages.forEach((thisMessage) => {
-    let fromEmail = thisMessage[0].getFrom();
+    let fromEmail = thisMessage[0].getFrom().match(/(?<=\<).*(?=\>)/)[0];
     let receivedTime = thisMessage[0].getDate();
     let messageContent = thisMessage[0].getPlainBody();
     let thisMessagePrepped = {
@@ -70,7 +70,7 @@ function getTransactionsFromAllMessages(preppedMessages) {
     newCompleted: [],
   };
   preppedMessages.forEach((thisMessage) => {
-    let bank = getBankData(thismessage);
+    let bank = getBankData(thisMessage);
     let receivedTime = thisMessage.time;
     let messageContent = thisMessage.content;
     Logger.log("Message:");
